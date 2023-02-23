@@ -1,6 +1,7 @@
 import os
 import shutil
 import re
+from datetime import datetime
 
 
 #run the script in your gem5 directory, create output_susan and output_CRC directories inside
@@ -12,16 +13,16 @@ susan_path = 'automotive/susan'
 CRC_path = 'telecomm/CRC32'
 
 #0 for simulating a range of sizes, 1 for simulating one size only
-data_cache_constant = 0
+data_cache_constant = 1
 instruction_cache_constant = 0
 
 #if 0 2^^(n-1) will be simulated
-data_cache_size = 64
-instruction_cache_size = 64
+data_cache_size = 2
+instruction_cache_size = 2
 
 #if 1 range from 2 to 2^^(n-1) will be simulated
 data_cache_range = 7
-instruction_cache_range = 7
+instruction_cache_range = 2
 
 
 include_partB = 0
@@ -57,10 +58,11 @@ for dsize in (2**p for p in range(1, data_cache_range)):
 	for isize in (2**p for p in range(1, instruction_cache_range)):
 	
 		if(instruction_cache_constant):
-			isize = data_cache_size
+			isize = instruction_cache_size
+
 		
 		#run susan
-		command = "./build/" + ISA + "/gem5.opt configs/example/se.py  -c " + susan_path + "/susan " + "-o " + susan_path + "/input_large.pkg" + " --l1d_size=" + str(dsize) + "kB --l1i_size=" + str(isize) + "kB --caches"
+		command = "./build/" + ISA + "/gem5.opt configs/example/se.py  -c " + susan_path + "/susan " + "-o " + "\"" + susan_path + "/input_large.pgm sample_output.pgm" + "\""   + " --l1d_size=" + str(dsize) + "kB --l1i_size=" + str(isize) + "kB --caches"
 		
 		if(include_partB):
 			command = command + " --l1d_assoc " + str(cache_associativity) + " --cacheline_size "  + str(cacheline_size)
@@ -75,11 +77,13 @@ for dsize in (2**p for p in range(1, data_cache_range)):
 		
 		os.system(command)
 		
-		shutil.copyfile('m5out/stats.txt', ('outputs_susan/' + 'd' + str(dsize) + 'i' + str(isize)))
+		currentDateAndTime = datetime.now()
+		
+		shutil.copyfile('m5out/stats.txt', ('outputs_susan_' + ISA  + '/d' + str(dsize) + 'i' + str(isize)) + '_' + currentDateAndTime.strftime("%H:%M:%S, %-d"))
 		
 		#run CRC
 		
-		command = "./build/" + ISA + "/gem5.opt configs/example/se.py  -c " + CRC_path + "/crc " + "-o " + "telecomm/adpcm/data/large.pcm" + " --l1d_size=" + str(dsize) + "kB --l1i_size=" + str(isize) + "kB --caches"
+		command = "./build/" + ISA + "/gem5.opt configs/example/se.py  -c " + CRC_path + "/crc " + "-o " + "\"" + "telecomm/adpcm/data/large.pcm" + "\"" + " --l1d_size=" + str(dsize) + "kB --l1i_size=" + str(isize) + "kB --caches"
 		
 		if(include_partB):
 			command = command + " --l1d_assoc " + str(cache_associativity) + " --cacheline_size "  + str(cacheline_size)
@@ -94,7 +98,9 @@ for dsize in (2**p for p in range(1, data_cache_range)):
 		
 		os.system(command)
 		
-		shutil.copyfile('m5out/stats.txt', ('outputs_CRC/' + 'd' + str(dsize) + 'i' + str(isize)))
+		currentDateAndTime = datetime.now()
+		
+		shutil.copyfile('m5out/stats.txt', ('outputs_CRC_' + ISA + '/d' + str(dsize) + 'i' + str(isize)) + '_' + currentDateAndTime.strftime("%H:%M:%S, %-d"))
 		
 		
 		#text_file = open('outputs/' + 'd' + str(dsize) + 'i' + str(isize),'r')
